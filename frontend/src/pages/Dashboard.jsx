@@ -117,14 +117,14 @@ export default function Dashboard() {
     setIsPanelOpen(true);
   }, []);
 
-  const handleCountryClick = useCallback((countryName) => {
+  const handleCountryClick = useCallback((countryData) => {
     setIsPanelOpen(false);
-    setSelectedCountry(countryName);
+    setSelectedCountry(typeof countryData === 'string' ? { name: countryData, lat: null, lng: null } : countryData);
     setIsCountryPanelOpen(true);
   }, []);
 
-  const handleGlobeCountryClick = useCallback((countryName) => {
-    setSelectedCountryForNews(countryName);
+  const handleGlobeCountryClick = useCallback((countryData) => {
+    setSelectedCountryForNews(typeof countryData === 'string' ? { name: countryData, lat: null, lng: null } : countryData);
     setIsLocationNewsModalOpen(true);
   }, []);
 

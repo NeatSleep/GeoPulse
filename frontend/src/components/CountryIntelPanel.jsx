@@ -66,17 +66,20 @@ const CategoryBar = ({ category, count, total }) => {
 };
 
 export default function CountryIntelPanel({ country, isOpen, onClose, allEvents = [] }) {
+  const countryName = typeof country === 'string' ? country : country?.name;
+  const lat = country?.lat;
+  const lng = country?.lng;
   const [aiIntel, setAiIntel] = useState(null);
   const [loadingIntel, setLoadingIntel] = useState(false);
   const [intelError, setIntelError] = useState(null);
 
   // Fetch AI-generated intel when country opens
   useEffect(() => {
-    if (isOpen && country) {
+    if (isOpen && countryName) {
       setLoadingIntel(true);
       setIntelError(null);
 
-      getCountryIntel(country)
+      getCountryIntel(countryName)
         .then(data => {
           setAiIntel(data.intel);
         })
@@ -92,10 +95,10 @@ export default function CountryIntelPanel({ country, isOpen, onClose, allEvents 
 
   // Compute country intelligence from the already-fetched events
   const data = useMemo(() => {
-    if (!country || !allEvents.length) return null;
+    if (!countryName || !allEvents.length) return null;
 
     const countryEvents = allEvents.filter(
-      e => e.country && e.country.toLowerCase() === country.toLowerCase()
+      e => e.country && e.country.toLowerCase() === countryName.toLowerCase()
     );
 
     if (countryEvents.length === 0) return null;
@@ -122,7 +125,7 @@ export default function CountryIntelPanel({ country, isOpen, onClose, allEvents 
       category_breakdown: categoryBreakdown,
       recent_events: countryEvents.slice(0, 6),
     };
-  }, [country, allEvents]);
+  }, [countryName, allEvents]);
 
   return (
     <AnimatePresence>
@@ -148,7 +151,21 @@ export default function CountryIntelPanel({ country, isOpen, onClose, allEvents 
               <div className="flex items-center justify-between">
                 <div>
                   <span className="text-[10px] uppercase tracking-[0.2em] font-mono text-[var(--cat-political)]">Country Intelligence</span>
-                  <h2 className="text-2xl font-bold tracking-tight mt-1" data-testid="country-name">{country}</h2>
+                  <h2 className="text-2xl font-bold tracking-tight mt-1" data-testid="country-name">{countryName}</h2>
+                  {lat !== undefined && lng !== undefined && lat !== null && lng !== null && (
+                    <div className="flex gap-4 mt-2">
+                      <div className="flex items-center gap-1.5 text-xs font-mono text-[var(--text-secondary)] bg-white/5 px-2 py-1 rounded-md border border-white/5">
+                        <MapPin className="w-3 h-3 text-[var(--cat-political)]" />
+                        <span className="text-[var(--text-muted)]">LAT</span>
+                        <span className="text-[var(--text-primary)]">{lat.toFixed(4)}°</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs font-mono text-[var(--text-secondary)] bg-white/5 px-2 py-1 rounded-md border border-white/5">
+                        <MapPin className="w-3 h-3 text-[var(--cat-economic)]" />
+                        <span className="text-[var(--text-muted)]">LON</span>
+                        <span className="text-[var(--text-primary)]">{lng.toFixed(4)}°</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <button onClick={onClose} className="glass-light p-2 rounded-md hover:bg-[var(--bg-elevated)] transition-colors" data-testid="country-panel-close-btn">
                   <X className="w-5 h-5" />

@@ -69,9 +69,9 @@ const EventMarkers = ({ events, onEventClick, onCountryClick }) => {
 
       const icon = createMarkerIcon(event.category, event.intensity);
       const marker = L.marker([event.location.lat, event.location.lng], { icon });
-      
+
       marker.on('click', () => handleMarkerClick(event));
-      
+
       const color = CATEGORY_COLORS[event.category] || '#3B82F6';
       marker.bindTooltip(
         `<div style="background:#101217;color:#fff;padding:8px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);font-family:'IBM Plex Sans',sans-serif;width:max-content;max-width:380px;word-wrap:break-word;white-space:normal;">
@@ -112,7 +112,7 @@ const MapClickHandler = ({ onCountryClick }) => {
       // Try async reverse geocoding first
       const location = await reverseGeocode(lat, lng);
       if (location && location !== 'Unknown Location' && onCountryClick) {
-        onCountryClick(location);
+        onCountryClick({ name: location, lat, lng });
       }
     };
 
