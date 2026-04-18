@@ -16,6 +16,7 @@ import EventGraph from '../components/EventGraph';
 import SimulationPanel from '../components/SimulationPanel';
 import FinanceCorrelation from '../components/FinanceCorrelation';
 import SearchRejectionModal from '../components/SearchRejectionModal';
+import IntelAssistant from '../components/IntelAssistant';
 import useWebSocket from '../hooks/useWebSocket';
 import { Map, Globe as GlobeIcon, GitBranch, Zap, Clock } from 'lucide-react';
 
@@ -45,6 +46,7 @@ export default function Dashboard() {
   const [isLocationNewsModalOpen, setIsLocationNewsModalOpen] = useState(false);
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
   const [rejectionModal, setRejectionModal] = useState({ isOpen: false, query: '', reason: '', recommendation: '' });
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
   // WebSocket
   const handleNewEvent = useCallback((eventData) => {
@@ -242,6 +244,7 @@ export default function Dashboard() {
               setSearchResults(null);
             }}
             searchResults={searchResults}
+            onOpenAssistant={() => setIsAssistantOpen(true)}
           />
         </div>
       )}
@@ -303,6 +306,9 @@ export default function Dashboard() {
 
       {/* AI Chatbot */}
       <ChatBot />
+
+      {/* Intel Assistant */}
+      <IntelAssistant isOpen={isAssistantOpen} onClose={() => setIsAssistantOpen(false)} />
 
       {/* Status Indicator */}
       <div className="fixed bottom-6 right-4 z-40 flex gap-2 pointer-events-auto" data-testid="control-bar">

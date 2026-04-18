@@ -22,7 +22,8 @@ export default function LocationNewsModal({ isOpen, onClose, country, events }) 
 
   if (!country) return null;
 
-  const countryEvents = events.filter(e => e.country === country);
+  const countryName = typeof country === 'string' ? country : country?.name;
+  const countryEvents = events.filter(e => e.country === countryName);
   const hasNews = countryEvents.length > 0;
 
   return (
@@ -56,7 +57,7 @@ export default function LocationNewsModal({ isOpen, onClose, country, events }) 
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-white" data-testid="modal-country-name">
-                    {country}
+                    {typeof country === 'object' && country?.displayName ? country.displayName : countryName}
                   </h2>
                   <p className="text-sm text-gray-400">
                     {hasNews ? `${countryEvents.length} ${countryEvents.length === 1 ? 'event' : 'events'} found` : 'No news found'}

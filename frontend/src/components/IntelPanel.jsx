@@ -1,22 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ExternalLink, MapPin, Calendar, Shield, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, ExternalLink, MapPin, Calendar, Shield, AlertTriangle, CheckCircle, AlertCircle, Zap } from 'lucide-react';
 import { CATEGORY_COLORS } from '../services/api';
 import { getAuthenticityLabel, getAuthenticityBadgeColor } from '../services/search';
 import TranslateButton from './TranslateButton';
 
 export default function IntelPanel({ event, isOpen, onClose, searchResults }) {
-  // ── Translation state (declared above any early returns) ──
-  const [translatedFields, setTranslatedFields] = useState(null);
-
-  const handleTranslated = useCallback((translated) => {
-    setTranslatedFields(translated);
-  }, []);
-
-  const handleShowOriginal = useCallback(() => {
-    setTranslatedFields(null);
-  }, []);
-
   // Handle search results display
   if (searchResults && searchResults.success && searchResults.results && searchResults.results.length > 0) {
     return (
@@ -32,7 +21,7 @@ export default function IntelPanel({ event, isOpen, onClose, searchResults }) {
               className="fixed inset-0 bg-black/50 z-[60]"
               data-testid="intel-panel-backdrop"
             />
-            
+
             {/* Search Results Panel */}
             <motion.div
               initial={{ x: '100%' }}
@@ -52,13 +41,24 @@ export default function IntelPanel({ event, isOpen, onClose, searchResults }) {
                       {searchResults.query && `Query: "${searchResults.query}"`}
                     </p>
                   </div>
-                  <button
-                    onClick={onClose}
-                    className="p-2 hover:bg-[var(--bg-elevated)] rounded-lg transition-colors"
-                    data-testid="intel-panel-close"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {onOpenAssistant && (
+                      <button
+                        onClick={onOpenAssistant}
+                        className="p-2 hover:bg-[var(--bg-elevated)] rounded-lg transition-colors"
+                        title="Ask AI Assistant"
+                      >
+                        <Zap className="w-5 h-5 text-yellow-400" />
+                      </button>
+                    )}
+                    <button
+                      onClick={onClose}
+                      className="p-2 hover:bg-[var(--bg-elevated)] rounded-lg transition-colors"
+                      data-testid="intel-panel-close"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Relevance Message */}
@@ -90,11 +90,10 @@ export default function IntelPanel({ event, isOpen, onClose, searchResults }) {
                         ) : (
                           <AlertCircle className="w-4 h-4 text-yellow-400" />
                         )}
-                        <span className={`text-xs font-mono px-2 py-1 rounded ${
-                          article.authenticity_score >= 0.85 ? 'bg-green-500/20 text-green-300' :
-                          article.authenticity_score >= 0.65 ? 'bg-yellow-500/20 text-yellow-300' :
-                          'bg-red-500/20 text-red-300'
-                        }`}>
+                        <span className={`text-xs font-mono px-2 py-1 rounded ${article.authenticity_score >= 0.85 ? 'bg-green-500/20 text-green-300' :
+                            article.authenticity_score >= 0.65 ? 'bg-yellow-500/20 text-yellow-300' :
+                              'bg-red-500/20 text-red-300'
+                          }`}>
                           {getAuthenticityLabel(article.authenticity_score)} ({(article.authenticity_score * 100).toFixed(0)}%)
                         </span>
                       </div>
@@ -156,7 +155,7 @@ export default function IntelPanel({ event, isOpen, onClose, searchResults }) {
             className="fixed inset-0 bg-black/50 z-[60]"
             data-testid="intel-panel-backdrop"
           />
-          
+
           {/* Panel */}
           <motion.div
             initial={{ x: '100%' }}
@@ -200,13 +199,24 @@ export default function IntelPanel({ event, isOpen, onClose, searchResults }) {
                     {translatedFields?.title || event.title}
                   </h2>
                 </div>
-                <button
-                  onClick={onClose}
-                  className="glass-light p-2 rounded-md hover:bg-[var(--bg-elevated)] transition-colors"
-                  data-testid="intel-panel-close-btn"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {onOpenAssistant && (
+                    <button
+                      onClick={onOpenAssistant}
+                      className="glass-light p-2 rounded-md hover:bg-[var(--bg-elevated)] transition-colors"
+                      title="Ask AI Assistant about this event"
+                    >
+                      <Zap className="w-5 h-5 text-yellow-400" />
+                    </button>
+                  )}
+                  <button
+                    onClick={onClose}
+                    className="glass-light p-2 rounded-md hover:bg-[var(--bg-elevated)] transition-colors"
+                    data-testid="intel-panel-close-btn"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               {/* Metadata */}

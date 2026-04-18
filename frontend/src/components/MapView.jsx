@@ -111,8 +111,8 @@ const MapClickHandler = ({ onCountryClick }) => {
       const { lat, lng } = e.latlng;
       // Try async reverse geocoding first
       const location = await reverseGeocode(lat, lng);
-      if (location && location !== 'Unknown Location' && onCountryClick) {
-        onCountryClick({ name: location, lat, lng });
+      if (location && location.displayName !== 'Unknown Location' && onCountryClick) {
+        onCountryClick({ name: location.country || location.displayName, lat, lng, city: location.city, state: location.state, country: location.country, displayName: location.displayName });
       }
     };
 
