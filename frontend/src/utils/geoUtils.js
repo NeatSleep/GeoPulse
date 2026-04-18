@@ -5,10 +5,11 @@ const geocodeCache = new Map();
  * Reverse geocode using Nominatim (OpenStreetMap) - works anywhere on Earth
  * @param {number} lat - Latitude
  * @param {number} lng - Longitude
- * @returns {Promise<string>} Location name or "Unknown Location"
+ * @returns {Promise<{displayName: string, city: string|null, state: string|null, country: string|null}>}
  */
 export const reverseGeocode = async (lat, lng) => {
-  if (typeof lat !== 'number' || typeof lng !== 'number') return 'Unknown Location';
+  const fallback = { displayName: 'Unknown Location', city: null, state: null, country: null };
+  if (typeof lat !== 'number' || typeof lng !== 'number') return fallback;
 
   // Check cache first
   const cacheKey = `${lat.toFixed(3)},${lng.toFixed(3)}`;
@@ -31,30 +32,23 @@ export const reverseGeocode = async (lat, lng) => {
 
     const data = await response.json();
 
-    // Extract the most relevant location name
-    let location = 'Unknown Location';
+    // Extract structured location parts
+    const city = data.address?.city || data.address?.town || data.address?.village || data.address?.hamlet || null;
+    const state = data.address?.state || data.address?.county || data.address?.region || null;
+    const country = data.address?.country || null;
 
-    if (data.address) {
-      // Priority: country > state > city > district
-      if (data.address.country) {
-        location = data.address.country;
-      } else if (data.address.state) {
-        location = data.address.state;
-      } else if (data.address.city) {
-        location = data.address.city;
-      } else if (data.address.county) {
-        location = data.address.county;
-      }
-    } else if (data.name) {
-      location = data.name;
-    }
+    // Build human-readable display name from the parts
+    const parts = [city, state, country].filter(Boolean);
+    const displayName = parts.length > 0 ? parts.join(', ') : (data.display_name || 'Unknown Location');
+
+    const result = { displayName, city, state, country };
 
     // Cache the result
-    geocodeCache.set(cacheKey, location);
-    return location;
+    geocodeCache.set(cacheKey, result);
+    return result;
   } catch (err) {
     console.warn('Reverse geocoding error:', err);
-    return 'Unknown Location';
+    return fallback;
   }
 };
 
