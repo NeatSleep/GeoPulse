@@ -22,11 +22,11 @@ export default function GlobeView({ events, onEventClick, onCountryClick, select
       const controls = globeRef.current.controls();
       const prevRotate = controls.autoRotate;
       controls.autoRotate = false;
-
-      globeRef.current.pointOfView({
-        lat: selectedEvent.location.lat,
-        lng: selectedEvent.location.lng,
-        altitude: 0.8
+      
+      globeRef.current.pointOfView({ 
+        lat: selectedEvent.location.lat, 
+        lng: selectedEvent.location.lng, 
+        altitude: 0.8 
       }, 1000);
 
       // Optionally resume after animation...
@@ -69,7 +69,7 @@ export default function GlobeView({ events, onEventClick, onCountryClick, select
       }
       // Also trigger country click to show location news modal
       if (onCountryClick && point.event.country) {
-        onCountryClick({ name: point.event.country, lat: point.event.location?.lat, lng: point.event.location?.lng });
+        onCountryClick(point.event.country);
       }
     }
   }, [onEventClick, onCountryClick]);
@@ -80,6 +80,8 @@ export default function GlobeView({ events, onEventClick, onCountryClick, select
       console.log('Reverse geocoding for:', { lat, lng });
       const location = await reverseGeocode(lat, lng);
       console.log('Geocoding result:', location);
+      if (location && location !== 'Unknown Location' && onCountryClick) {
+        onCountryClick(location);
       if (location && location.displayName !== 'Unknown Location' && onCountryClick) {
         onCountryClick({ name: location.country || location.displayName, lat, lng, city: location.city, state: location.state, country: location.country, displayName: location.displayName });
       }

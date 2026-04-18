@@ -233,6 +233,9 @@ export default function Dashboard() {
       </div>
 
       {/* Modals - Individually wrapped to only block clicks when open */}
+      {isPanelOpen && (
+        <div className="fixed inset-0 z-[100] pointer-events-auto">
+          <IntelPanel event={selectedEvent} isOpen={isPanelOpen} onClose={() => setIsPanelOpen(false)} />
       {/* Regular Event Panel OR Search Results */}
       {(isPanelOpen || searchResults?.success) && (
         <div className="fixed inset-0 z-50 pointer-events-auto">
@@ -260,7 +263,7 @@ export default function Dashboard() {
       )}
       {isGraphOpen && (
         <div className="fixed inset-0 z-50 pointer-events-auto">
-          <EventGraph isOpen={isGraphOpen} onClose={() => setIsGraphOpen(false)} allEvents={events} />
+          <EventGraph isOpen={isGraphOpen} onClose={() => setIsGraphOpen(false)} allEvents={events} onNodeClick={handleEventClick} />
         </div>
       )}
       {isSimulationOpen && (
