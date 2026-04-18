@@ -20,7 +20,7 @@ const getDateRanges = () => {
 	const today = new Date();
 
 	// Fetch news from last 4 days, 2 days per query for faster LLM processing
-	for (let i = 0; i < 4; i++) {
+	for (let i = 0; i < 6; i++) {
 		const endDate = new Date(today);
 		endDate.setDate(endDate.getDate() - i);
 
@@ -88,5 +88,36 @@ exports.fetchFromNewsAPI = async () => {
 		logger.error(`NewsAPI fetch failed: ${err.message}`, "newsapi.fetcher");
 
 		return []; // fail gracefully
+	}
+};
+
+/**
+ * Search NewsAPI for specific query
+ */
+exports.fetchNewsWithSearch = async (searchQuery) => {
+	try {
+		logger.info(`Searching NewsAPI for: "${searchQuery}"`, "newsapi.fetcher");
+
+		const res = await axios.get(NEWS_URL, {
+			params: {
+				q: searchQuery,
+				language: "en",
+				sortBy: "relevancy",
+				pageSize: 20,
+				apiKey: config.NEWS_API_KEY,
+			},
+			timeout: 10000
+		});
+
+		const articles = res.data.articles || [];
+		logger.info(
+			`NewsAPI search returned ${articles.length} articles for "${searchQuery}"`,
+			"newsapi.fetcher",
+		);
+
+		return articles;
+	} catch (err) {
+		logger.error(`NewsAPI search failed: ${err.message}`, "newsapi.fetcher");
+		return [];
 	}
 };
