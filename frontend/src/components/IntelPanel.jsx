@@ -5,8 +5,7 @@ import { CATEGORY_COLORS } from '../services/api';
 import { getAuthenticityLabel, getAuthenticityBadgeColor } from '../services/search';
 import TranslateButton from './TranslateButton';
 
-<<<<<<<< < Temporary merge branch 1
-export default function IntelPanel({ event, isOpen, onClose, searchResults }) {
+export default function IntelPanel({ event, isOpen, onClose, searchResults, onOpenAssistant }) {
   // ── Translation state (declared above any early returns) ──
   const [translatedFields, setTranslatedFields] = useState(null);
 
@@ -18,9 +17,6 @@ export default function IntelPanel({ event, isOpen, onClose, searchResults }) {
     setTranslatedFields(null);
   }, []);
 
-=========
-export default function IntelPanel({ event, isOpen, onClose, searchResults, onOpenAssistant }) {
->>>>>>>>> Temporary merge branch 2
   // Handle search results display
   if (searchResults && searchResults.success && searchResults.results && searchResults.results.length > 0) {
     return (
@@ -106,8 +102,8 @@ export default function IntelPanel({ event, isOpen, onClose, searchResults, onOp
                           <AlertCircle className="w-4 h-4 text-yellow-400" />
                         )}
                         <span className={`text-xs font-mono px-2 py-1 rounded ${article.authenticity_score >= 0.85 ? 'bg-green-500/20 text-green-300' :
-                            article.authenticity_score >= 0.65 ? 'bg-yellow-500/20 text-yellow-300' :
-                              'bg-red-500/20 text-red-300'
+                          article.authenticity_score >= 0.65 ? 'bg-yellow-500/20 text-yellow-300' :
+                            'bg-red-500/20 text-red-300'
                           }`}>
                           {getAuthenticityLabel(article.authenticity_score)} ({(article.authenticity_score * 100).toFixed(0)}%)
                         </span>
@@ -167,7 +163,7 @@ export default function IntelPanel({ event, isOpen, onClose, searchResults, onOp
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/50 z-[800]"
+            className="fixed inset-0 bg-black/50 z-[60]"
             data-testid="intel-panel-backdrop"
           />
 
@@ -177,7 +173,7 @@ export default function IntelPanel({ event, isOpen, onClose, searchResults, onOp
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 h-full w-full md:w-[480px] z-[80] glass-panel overflow-y-auto"
+            className="fixed right-0 top-0 h-full w-full md:w-[480px] z-[60] glass-panel overflow-y-auto"
             onClick={(event) => event.stopPropagation()}
             data-testid="intel-panel"
           >
