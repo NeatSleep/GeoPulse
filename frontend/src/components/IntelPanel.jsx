@@ -18,7 +18,7 @@ export default function IntelPanel({ event, isOpen, onClose }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            className="fixed inset-0 bg-black/50 z-[60]"
             data-testid="intel-panel-backdrop"
           />
           
@@ -28,7 +28,8 @@ export default function IntelPanel({ event, isOpen, onClose }) {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 h-full w-full md:w-[480px] z-50 glass-panel overflow-y-auto"
+            className="fixed right-0 top-0 h-full w-full md:w-[480px] z-[60] glass-panel overflow-y-auto"
+            onClick={(event) => event.stopPropagation()}
             data-testid="intel-panel"
           >
             <div className="p-6 space-y-6">
@@ -128,12 +129,6 @@ export default function IntelPanel({ event, isOpen, onClose }) {
                 <h3 className="text-xs uppercase tracking-widest font-mono text-[var(--text-secondary)]">Description</h3>
                 <p className="text-sm leading-relaxed text-[var(--text-secondary)] break-words whitespace-pre-wrap" data-testid="event-description">
                   {event.description}
-                </p>
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xs uppercase tracking-widest font-mono text-[var(--text-secondary)]">Content</h3>
-                <p className="text-sm leading-relaxed text-[var(--text-secondary)] break-words whitespace-pre-wrap" data-testid="event-content">
-                  {event.content}
                 </p>
               </div>
 

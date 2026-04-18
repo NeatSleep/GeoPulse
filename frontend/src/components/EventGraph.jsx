@@ -12,7 +12,7 @@ const EDGE_LABELS = {
   linked_to: { color: '#94A3B8', dash: '3,3' },
 };
 
-export default function EventGraph({ isOpen, onClose, allEvents = [] }) {
+export default function EventGraph({ isOpen, onClose, allEvents = [], onNodeClick }) {
   const canvasRef = useRef(null);
   const [graphData, setGraphData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -21,6 +21,99 @@ export default function EventGraph({ isOpen, onClose, allEvents = [] }) {
   const simulationRef = useRef(null);
   const nodesRef = useRef([]);
   const edgesRef = useRef([]);
+  const scaleRef = useRef(1);
+  const ctxRef = useRef(null);
+  const canvasSizeRef = useRef({ width: 0, height: 0 });
+  const panRef = useRef({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const lastPointerRef = useRef({ x: 0, y: 0 });
+  const panMovedRef = useRef(false);
+
+  const handleWheelZoom = useCallback((event) => {
+    event.preventDefault();
+    const delta = event.deltaY > 0 ? -0.12 : 0.12;
+    setScale(prev => Math.min(2.5, Math.max(0.35, prev + delta)));
+  }, []);
+
+  const handlePanStart = useCallback((event) => {
+    if (event.button !== 0) return;
+    setIsPanning(true);
+    lastPointerRef.current = { x: event.clientX, y: event.clientY };
+    panMovedRef.current = false;
+  }, []);
+
+  const handlePanMove = useCallback((event) => {
+    if (!isPanning) return;
+    const dx = event.clientX - lastPointerRef.current.x;
+    const dy = event.clientY - lastPointerRef.current.y;
+    if (Math.abs(dx) > 1 || Math.abs(dy) > 1) panMovedRef.current = true;
+    lastPointerRef.current = { x: event.clientX, y: event.clientY };
+    panRef.current = { x: panRef.current.x + dx, y: panRef.current.y + dy };
+
+    const ctx = ctxRef.current;
+    const { width, height } = canvasSizeRef.current;
+    if (ctx && nodesRef.current.length && edgesRef.current.length) {
+      draw(ctx, nodesRef.current, edgesRef.current, width, height);
+    }
+  }, [isPanning]);
+
+  const handleCanvasClick = useCallback((event) => {
+    if (isPanning || panMovedRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas || !nodesRef.current.length) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const { width, height } = canvasSizeRef.current;
+
+    const nodes = nodesRef.current;
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    nodes.forEach(n => {
+      minX = Math.min(minX, n.x);
+      maxX = Math.max(maxX, n.x);
+      minY = Math.min(minY, n.y);
+      maxY = Math.max(maxY, n.y);
+    });
+
+    const boundsWidth = Math.max(1, maxX - minX);
+    const boundsHeight = Math.max(1, maxY - minY);
+    const padding = 36;
+    const fitScale = Math.min(
+      (width - padding * 2) / boundsWidth,
+      (height - padding * 2) / boundsHeight,
+      1
+    );
+    const zoomScale = Math.max(0.35, scaleRef.current * fitScale);
+    const pan = panRef.current;
+
+    const worldX = (x - width / 2 - pan.x) / zoomScale + (minX + maxX) / 2;
+    const worldY = (y - height / 2 - pan.y) / zoomScale + (minY + maxY) / 2;
+
+    let hitNode = null;
+    for (let i = nodes.length - 1; i >= 0; i -= 1) {
+      const n = nodes[i];
+      const r = 12 + (n.intensity || 5) * 0.8;
+      const dx = worldX - n.x;
+      const dy = worldY - n.y;
+      if (dx * dx + dy * dy <= r * r) {
+        hitNode = n;
+        break;
+      }
+    }
+
+    if (hitNode?.event && onNodeClick) {
+      onNodeClick(hitNode.event);
+    }
+  }, [isPanning, onNodeClick]);
+
+  const handlePanEnd = useCallback(() => {
+    setIsPanning(false);
+  }, []);
 
   // Build a simple relationship graph from the loaded events (demo)
   const buildGraph = useCallback(() => {
@@ -34,6 +127,7 @@ export default function EventGraph({ isOpen, onClose, allEvents = [] }) {
         category: e.category,
         country: e.country,
         intensity: e.severity || 3,
+        event: e,
       }));
 
       // Build edges between events that share the same country
@@ -61,32 +155,73 @@ export default function EventGraph({ isOpen, onClose, allEvents = [] }) {
   }, [isOpen, graphData, buildGraph]);
 
   useEffect(() => {
+    scaleRef.current = scale;
+    const ctx = ctxRef.current;
+    const { width, height } = canvasSizeRef.current;
+    if (ctx && nodesRef.current.length && edgesRef.current.length) {
+      draw(ctx, nodesRef.current, edgesRef.current, width, height);
+    }
+  }, [scale]);
+
+  useEffect(() => {
     if (!graphData || !canvasRef.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    const width = canvas.width = canvas.offsetWidth * 2;
-    const height = canvas.height = canvas.offsetHeight * 2;
-    ctx.scale(2, 2);
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const width = canvas.offsetWidth;
+    const height = canvas.offsetHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctxRef.current = ctx;
+    canvasSizeRef.current = { width, height };
 
-    const nodes = graphData.nodes.map(n => ({ ...n, x: Math.random() * width / 2, y: Math.random() * height / 2 }));
+    const nodes = graphData.nodes.map(n => ({ ...n, x: Math.random() * width, y: Math.random() * height }));
     const edges = graphData.edges.map(e => ({ ...e }));
     nodesRef.current = nodes;
     edgesRef.current = edges;
 
     const simulation = d3Force.forceSimulation(nodes)
       .force('charge', d3Force.forceManyBody().strength(-200))
-      .force('center', d3Force.forceCenter(width / 4, height / 4))
+      .force('center', d3Force.forceCenter(width / 2, height / 2))
       .force('link', d3Force.forceLink(edges).id(d => d.id).distance(120).strength(0.5))
       .force('collision', d3Force.forceCollide().radius(30))
-      .on('tick', () => draw(ctx, nodes, edges, width / 2, height / 2));
+      .on('tick', () => draw(ctx, nodes, edges, width, height));
 
     simulationRef.current = simulation;
     return () => simulation.stop();
-  }, [graphData, scale]);
+  }, [graphData]);
 
   const draw = (ctx, nodes, edges, w, h) => {
     ctx.clearRect(0, 0, w, h);
+
+    const padding = 36;
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    nodes.forEach(n => {
+      minX = Math.min(minX, n.x);
+      maxX = Math.max(maxX, n.x);
+      minY = Math.min(minY, n.y);
+      maxY = Math.max(maxY, n.y);
+    });
+
+    const boundsWidth = Math.max(1, maxX - minX);
+    const boundsHeight = Math.max(1, maxY - minY);
+    const fitScale = Math.min(
+      (w - padding * 2) / boundsWidth,
+      (h - padding * 2) / boundsHeight,
+      1
+    );
+    const zoomScale = Math.max(0.35, scaleRef.current * fitScale);
+    const pan = panRef.current;
+
     ctx.save();
+    ctx.translate(w / 2 + pan.x, h / 2 + pan.y);
+    ctx.scale(zoomScale, zoomScale);
+    ctx.translate(-(minX + maxX) / 2, -(minY + maxY) / 2);
 
     // Draw edges
     edges.forEach(e => {
@@ -198,7 +333,15 @@ export default function EventGraph({ isOpen, onClose, allEvents = [] }) {
           </div>
 
           {/* Graph Canvas */}
-          <div className="flex-1 relative">
+          <div
+            className="flex-1 relative"
+            onWheel={handleWheelZoom}
+            onMouseDown={handlePanStart}
+            onMouseMove={handlePanMove}
+            onMouseUp={handlePanEnd}
+            onMouseLeave={handlePanEnd}
+            onClick={handleCanvasClick}
+          >
             {loading ? (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center space-y-3">
@@ -210,7 +353,7 @@ export default function EventGraph({ isOpen, onClose, allEvents = [] }) {
               <canvas
                 ref={canvasRef}
                 className="w-full h-full"
-                style={{ transform: `scale(${scale})`, transformOrigin: 'center' }}
+                style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
                 data-testid="graph-canvas"
               />
             )}
