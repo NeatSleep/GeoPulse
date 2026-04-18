@@ -5,7 +5,18 @@ import { CATEGORY_COLORS } from '../services/api';
 import { getAuthenticityLabel, getAuthenticityBadgeColor } from '../services/search';
 import TranslateButton from './TranslateButton';
 
-export default function IntelPanel({ event, isOpen, onClose, searchResults }) {
+export default function IntelPanel({ event, isOpen, onClose, searchResults, onOpenAssistant }) {
+  // ── Translation state (declared above any early returns) ──
+  const [translatedFields, setTranslatedFields] = useState(null);
+
+  const handleTranslated = useCallback((translated) => {
+    setTranslatedFields(translated);
+  }, []);
+
+  const handleShowOriginal = useCallback(() => {
+    setTranslatedFields(null);
+  }, []);
+
   // Handle search results display
   if (searchResults && searchResults.success && searchResults.results && searchResults.results.length > 0) {
     return (
