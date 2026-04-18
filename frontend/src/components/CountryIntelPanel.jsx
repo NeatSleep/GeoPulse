@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Shield, TrendingDown, AlertTriangle, BarChart3, MapPin, Brain, Loader2 } from 'lucide-react';
+import { X, Shield, TrendingDown, AlertTriangle, BarChart3, MapPin, Brain, Loader2, Navigation } from 'lucide-react';
 import { CATEGORY_COLORS } from '../services/api';
 import { getCountryIntel } from '../services/api';
 
@@ -69,6 +69,10 @@ export default function CountryIntelPanel({ country, isOpen, onClose, allEvents 
   const countryName = typeof country === 'string' ? country : country?.name;
   const lat = country?.lat;
   const lng = country?.lng;
+  const city = country?.city;
+  const state = country?.state;
+  const countryLabel = country?.country;
+  const displayName = country?.displayName;
   const [aiIntel, setAiIntel] = useState(null);
   const [loadingIntel, setLoadingIntel] = useState(false);
   const [intelError, setIntelError] = useState(null);
@@ -153,16 +157,46 @@ export default function CountryIntelPanel({ country, isOpen, onClose, allEvents 
                   <span className="text-[10px] uppercase tracking-[0.2em] font-mono text-[var(--cat-political)]">Country Intelligence</span>
                   <h2 className="text-2xl font-bold tracking-tight mt-1" data-testid="country-name">{countryName}</h2>
                   {lat !== undefined && lng !== undefined && lat !== null && lng !== null && (
-                    <div className="flex gap-4 mt-2">
-                      <div className="flex items-center gap-1.5 text-xs font-mono text-[var(--text-secondary)] bg-white/5 px-2 py-1 rounded-md border border-white/5">
-                        <MapPin className="w-3 h-3 text-[var(--cat-political)]" />
-                        <span className="text-[var(--text-muted)]">LAT</span>
-                        <span className="text-[var(--text-primary)]">{lat.toFixed(4)}°</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs font-mono text-[var(--text-secondary)] bg-white/5 px-2 py-1 rounded-md border border-white/5">
-                        <MapPin className="w-3 h-3 text-[var(--cat-economic)]" />
-                        <span className="text-[var(--text-muted)]">LON</span>
-                        <span className="text-[var(--text-primary)]">{lng.toFixed(4)}°</span>
+                    <div className="mt-3 space-y-2">
+                      {/* Location breakdown */}
+                      {(city || state || countryLabel) && (
+                        <div className="glass-light rounded-lg p-3 space-y-1.5">
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <Navigation className="w-3 h-3 text-[var(--cat-political)]" />
+                            <span className="text-[9px] uppercase tracking-[0.15em] font-mono text-[var(--text-muted)]">Location</span>
+                          </div>
+                          {city && (
+                            <div className="flex items-center justify-between text-xs font-mono">
+                              <span className="text-[var(--text-muted)]">City</span>
+                              <span className="text-[var(--text-primary)]">{city}</span>
+                            </div>
+                          )}
+                          {state && (
+                            <div className="flex items-center justify-between text-xs font-mono">
+                              <span className="text-[var(--text-muted)]">State</span>
+                              <span className="text-[var(--text-primary)]">{state}</span>
+                            </div>
+                          )}
+                          {countryLabel && (
+                            <div className="flex items-center justify-between text-xs font-mono">
+                              <span className="text-[var(--text-muted)]">Country</span>
+                              <span className="text-[var(--text-primary)]">{countryLabel}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {/* Coordinates */}
+                      <div className="flex gap-3">
+                        <div className="flex items-center gap-1.5 text-xs font-mono text-[var(--text-secondary)] bg-white/5 px-2 py-1 rounded-md border border-white/5">
+                          <MapPin className="w-3 h-3 text-[var(--cat-political)]" />
+                          <span className="text-[var(--text-muted)]">LAT</span>
+                          <span className="text-[var(--text-primary)]">{lat.toFixed(4)}°</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs font-mono text-[var(--text-secondary)] bg-white/5 px-2 py-1 rounded-md border border-white/5">
+                          <MapPin className="w-3 h-3 text-[var(--cat-economic)]" />
+                          <span className="text-[var(--text-muted)]">LON</span>
+                          <span className="text-[var(--text-primary)]">{lng.toFixed(4)}°</span>
+                        </div>
                       </div>
                     </div>
                   )}

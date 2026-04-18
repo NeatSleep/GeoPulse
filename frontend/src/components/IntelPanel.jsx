@@ -1,9 +1,143 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ExternalLink, MapPin, Calendar, Shield, AlertTriangle } from 'lucide-react';
+import { X, ExternalLink, MapPin, Calendar, Shield, AlertTriangle, CheckCircle, AlertCircle, Zap } from 'lucide-react';
 import { CATEGORY_COLORS } from '../services/api';
+import { getAuthenticityLabel, getAuthenticityBadgeColor } from '../services/search';
 
-export default function IntelPanel({ event, isOpen, onClose }) {
+export default function IntelPanel({ event, isOpen, onClose, searchResults, onOpenAssistant }) {
+  // Handle search results display
+  if (searchResults && searchResults.success && searchResults.results && searchResults.results.length > 0) {
+    return (
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={onClose}
+              className="fixed inset-0 bg-black/50 z-[60]"
+              data-testid="intel-panel-backdrop"
+            />
+            
+            {/* Search Results Panel */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="fixed right-0 top-0 h-full w-full md:w-[480px] z-[60] glass-panel overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+              data-testid="intel-panel"
+            >
+              <div className="p-6 space-y-6">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-[var(--text-primary)]">Search Results</h2>
+                    <p className="text-xs text-[var(--text-secondary)] mt-1">
+                      {searchResults.query && `Query: "${searchResults.query}"`}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {onOpenAssistant && (
+                      <button
+                        onClick={onOpenAssistant}
+                        className="p-2 hover:bg-[var(--bg-elevated)] rounded-lg transition-colors"
+                        title="Ask AI Assistant"
+                      >
+                        <Zap className="w-5 h-5 text-yellow-400" />
+                      </button>
+                    )}
+                    <button
+                      onClick={onClose}
+                      className="p-2 hover:bg-[var(--bg-elevated)] rounded-lg transition-colors"
+                      data-testid="intel-panel-close"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Relevance Message */}
+                {!searchResults.success && (
+                  <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+                    <p className="text-sm text-red-400">{searchResults.message}</p>
+                  </div>
+                )}
+
+                {/* Results List */}
+                <div className="space-y-4">
+                  {searchResults.results.map((article, idx) => (
+                    <motion.div
+                      key={article.id || idx}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.1 }}
+                      className="p-4 border border-white/10 rounded-lg hover:border-white/20 transition-colors"
+                    >
+                      {/* Title */}
+                      <h3 className="font-semibold text-[var(--text-primary)] mb-2 line-clamp-2 text-sm">
+                        {article.title}
+                      </h3>
+
+                      {/* Authenticity Badge */}
+                      <div className="flex items-center gap-2 mb-3">
+                        {article.authenticity_score >= 0.65 ? (
+                          <CheckCircle className="w-4 h-4 text-green-400" />
+                        ) : (
+                          <AlertCircle className="w-4 h-4 text-yellow-400" />
+                        )}
+                        <span className={`text-xs font-mono px-2 py-1 rounded ${
+                          article.authenticity_score >= 0.85 ? 'bg-green-500/20 text-green-300' :
+                          article.authenticity_score >= 0.65 ? 'bg-yellow-500/20 text-yellow-300' :
+                          'bg-red-500/20 text-red-300'
+                        }`}>
+                          {getAuthenticityLabel(article.authenticity_score)} ({(article.authenticity_score * 100).toFixed(0)}%)
+                        </span>
+                      </div>
+
+                      {/* Description */}
+                      <p className="text-xs text-[var(--text-secondary)] line-clamp-2 mb-3">
+                        {article.description}
+                      </p>
+
+                      {/* Meta */}
+                      <div className="flex items-center gap-3 text-xs text-[var(--text-muted)] mb-3 flex-wrap">
+                        <span className="flex items-center gap-1">
+                          <Shield className="w-3 h-3" /> {article.source}
+                        </span>
+                        {article.publishedAt && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" /> {new Date(article.publishedAt).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Read More Button */}
+                      {article.url && (
+                        <a
+                          href={article.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                        >
+                          Read Full Article <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    );
+  }
+
+  // Fallback to regular event display
   if (!event) return null;
 
   const categoryColor = CATEGORY_COLORS[event.category] || '#3B82F6';
@@ -65,13 +199,24 @@ export default function IntelPanel({ event, isOpen, onClose }) {
                     {event.title}
                   </h2>
                 </div>
-                <button
-                  onClick={onClose}
-                  className="glass-light p-2 rounded-md hover:bg-[var(--bg-elevated)] transition-colors"
-                  data-testid="intel-panel-close-btn"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {onOpenAssistant && (
+                    <button
+                      onClick={onOpenAssistant}
+                      className="glass-light p-2 rounded-md hover:bg-[var(--bg-elevated)] transition-colors"
+                      title="Ask AI Assistant about this event"
+                    >
+                      <Zap className="w-5 h-5 text-yellow-400" />
+                    </button>
+                  )}
+                  <button
+                    onClick={onClose}
+                    className="glass-light p-2 rounded-md hover:bg-[var(--bg-elevated)] transition-colors"
+                    data-testid="intel-panel-close-btn"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               {/* Metadata */}

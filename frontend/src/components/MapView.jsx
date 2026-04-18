@@ -113,6 +113,8 @@ const MapClickHandler = ({ onCountryClick }) => {
       const location = await reverseGeocode(lat, lng);
       if (location && location !== 'Unknown Location' && onCountryClick) {
         onCountryClick(location);
+      if (location && location.displayName !== 'Unknown Location' && onCountryClick) {
+        onCountryClick({ name: location.country || location.displayName, lat, lng, city: location.city, state: location.state, country: location.country, displayName: location.displayName });
       }
     };
 

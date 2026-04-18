@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, lazy, Suspense } from 'react';
 import { fetchGeopoliticsData } from '../services/api';
+import { searchNews } from '../services/search';
 import MapView from '../components/MapView';
 import GlobalCounters from '../components/GlobalCounters';
 import CategoryFilters from '../components/CategoryFilters';
@@ -14,6 +15,8 @@ import NewEventToast from '../components/NewEventToast';
 import EventGraph from '../components/EventGraph';
 import SimulationPanel from '../components/SimulationPanel';
 import FinanceCorrelation from '../components/FinanceCorrelation';
+import SearchRejectionModal from '../components/SearchRejectionModal';
+import IntelAssistant from '../components/IntelAssistant';
 import useWebSocket from '../hooks/useWebSocket';
 import { Map, Globe as GlobeIcon, GitBranch, Zap, Clock } from 'lucide-react';
 
@@ -29,6 +32,8 @@ export default function Dashboard() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState(null);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [timelineDate, setTimelineDate] = useState(null);
   const [viewMode, setViewMode] = useState('2d');
@@ -40,6 +45,8 @@ export default function Dashboard() {
   const [selectedCountryForNews, setSelectedCountryForNews] = useState(null);
   const [isLocationNewsModalOpen, setIsLocationNewsModalOpen] = useState(false);
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
+  const [rejectionModal, setRejectionModal] = useState({ isOpen: false, query: '', reason: '', recommendation: '' });
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
   // WebSocket
   const handleNewEvent = useCallback((eventData) => {
@@ -128,6 +135,25 @@ export default function Dashboard() {
     setIsLocationNewsModalOpen(true);
   }, []);
 
+  const handleSearchResults = useCallback((results) => {
+    if (!results) return;
+    
+    // Check if search was rejected
+    if (!results.success) {
+      setRejectionModal({
+        isOpen: true,
+        query: results.query || '',
+        reason: results.reason || results.message || 'This search is not applicable to our database.',
+        recommendation: results.recommendation || 'Try searching for geopolitical conflicts, diplomacy, sanctions, or other topics related to global affairs.'
+      });
+      return;
+    }
+    
+    // Search was successful, display results
+    setSearchResults(results);
+    setIsPanelOpen(true);
+  }, []);
+
   if (loading) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-[var(--bg-base)]" data-testid="loading-screen">
@@ -193,7 +219,7 @@ export default function Dashboard() {
         </div>
 
         {/* Search */}
-        <SearchBar onSearch={setSearchQuery} />
+        <SearchBar onSearch={setSearchQuery} onSearchResults={handleSearchResults} />
       </div>
 
       {/* Right: Finance Correlation */}
@@ -210,6 +236,19 @@ export default function Dashboard() {
       {isPanelOpen && (
         <div className="fixed inset-0 z-[100] pointer-events-auto">
           <IntelPanel event={selectedEvent} isOpen={isPanelOpen} onClose={() => setIsPanelOpen(false)} />
+      {/* Regular Event Panel OR Search Results */}
+      {(isPanelOpen || searchResults?.success) && (
+        <div className="fixed inset-0 z-50 pointer-events-auto">
+          <IntelPanel 
+            event={selectedEvent} 
+            isOpen={isPanelOpen || searchResults?.success} 
+            onClose={() => {
+              setIsPanelOpen(false);
+              setSearchResults(null);
+            }}
+            searchResults={searchResults}
+            onOpenAssistant={() => setIsAssistantOpen(true)}
+          />
         </div>
       )}
       {isCountryPanelOpen && (
@@ -232,6 +271,15 @@ export default function Dashboard() {
           <SimulationPanel isOpen={isSimulationOpen} onClose={() => setIsSimulationOpen(false)} />
         </div>
       )}
+
+      {/* Search Rejection Modal */}
+      <SearchRejectionModal
+        isOpen={rejectionModal.isOpen}
+        onClose={() => setRejectionModal({ ...rejectionModal, isOpen: false })}
+        query={rejectionModal.query}
+        reason={rejectionModal.reason}
+        recommendation={rejectionModal.recommendation}
+      />
 
       {/* Timeline Modal */}
       {isTimelineOpen && (
@@ -261,6 +309,9 @@ export default function Dashboard() {
 
       {/* AI Chatbot */}
       <ChatBot />
+
+      {/* Intel Assistant */}
+      <IntelAssistant isOpen={isAssistantOpen} onClose={() => setIsAssistantOpen(false)} />
 
       {/* Status Indicator */}
       <div className="fixed bottom-6 right-4 z-40 flex gap-2 pointer-events-auto" data-testid="control-bar">

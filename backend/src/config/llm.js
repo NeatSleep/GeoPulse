@@ -155,3 +155,57 @@ exports.queryLLMStructured = async (prompt, schema, options = {}) => {
 		throw err;
 	}
 };
+
+/**
+ * Query LLM with function calling (tool use)
+ */
+exports.queryLLMWithTools = async (messages, tools, options = {}) => {
+	try {
+		logger.info(`LLM tool calling request initiated`, "llm.js");
+		const client = getClient();
+		const model = process.env.OPENAI_MODEL || config.LLM.MODEL || "gpt-4";
+		const temperature = options.temperature ?? 0.7;
+
+		console.log("Tool Calling Request:", {
+			model,
+			baseURL: process.env.OPENAI_BASE_URL,
+			messagesCount: messages.length,
+			toolsCount: tools.length,
+		});
+
+		const response = await client.chat.completions.create({
+			model: model,
+			messages: messages,
+			tools: tools,
+			tool_choice: options.tool_choice || "auto",
+			temperature,
+			max_tokens: options.maxTokens || 4096,
+		});
+
+		const message = response.choices[0]?.message || {};
+		
+		logger.info(`LLM tool response received`, "llm.js");
+
+		console.log("Tool Response:", {
+			hasContent: !!message.content,
+			toolCallsCount: message.tool_calls?.length || 0,
+			finishReason: response.choices[0]?.finish_reason,
+		});
+
+		return {
+			content: message.content || "",
+			tool_calls: message.tool_calls || [],
+			stop_reason: response.choices[0]?.finish_reason || "end_turn"
+		};
+	} catch (err) {
+		logger.error(`LLM tool calling failed: ${err.message}`, "llm.js");
+		console.error("LLM Tool Error Details:", {
+			message: err.message,
+			status: err.status,
+			code: err.code,
+			type: err.type,
+			error: err.error,
+		});
+		throw err;
+	}
+};
