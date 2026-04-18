@@ -3,8 +3,9 @@ require("dotenv").config();
 const requiredEnv = [
 	"PORT",
 	"NEWS_API_KEY",
-	"LLM_MODEL",
-	"GROQ_API_KEY",
+	"OPENAI_API_KEY",
+	"OPENAI_BASE_URL",
+	"OPENAI_MODEL",
 ];
 
 requiredEnv.forEach((key) => {
@@ -19,8 +20,8 @@ module.exports = {
 	NEWS_API_KEY: process.env.NEWS_API_KEY,
 
 	LLM: {
-		URL: process.env.LLM_URL,
-		MODEL: process.env.LLM_MODEL,
+		URL: process.env.OPENAI_BASE_URL,
+		MODEL: process.env.OPENAI_MODEL,
 		TIMEOUT: process.env.LLM_TIMEOUT || 30000,
 	},
 

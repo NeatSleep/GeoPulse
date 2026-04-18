@@ -151,8 +151,10 @@ const extractJSON = (text) => {
 	}
 };
 
-const normalizeEventType = (type) =>
-	type.toLowerCase().replace(/[\s_-]+/g, "");
+const normalizeEventType = (type) => {
+	if (!type || typeof type !== "string") return "unknown";
+	return type.toLowerCase().replace(/[\s_-]+/g, "");
+};
 
 const cleanCountry = (country) => {
 	if (!country) return "Global";
@@ -222,7 +224,8 @@ exports.llmFilter = async (articles = []) => {
 				});
 			});
 		} catch (err) {
-			logger.error("LLM batch failed", "news.llmFilter");
+			logger.error(`LLM batch failed: ${err.message}`, "news.llmFilter");
+			console.error("Full error:", err);
 		}
 	}
 

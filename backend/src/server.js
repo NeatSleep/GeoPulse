@@ -3,6 +3,8 @@ const logger = require("./utils/logger");
 
 const cron = require("node-cron");
 const { runNewsPipeline } = require("./jobs/news.job");
+const { initWebSocket, broadcastPipelineComplete } = require("./config/websocket");
+const { getCache } = require("./cache/cache.service");
 
 const PORT = process.env.PORT || 5000;
 
@@ -19,10 +21,18 @@ const PORT = process.env.PORT || 5000;
 			logger.info(`Server running on port ${PORT}`, "server");
 		});
 
+		// Initialize WebSocket
+		initWebSocket(server);
+
 		// THEN schedule cron job
-		cron.schedule("0 */5 * * *", async () => {
+		cron.schedule("0 */5 * * * *", async () => {
 			logger.info("Cron triggered", "cron");
 			await runNewsPipeline();
+			const latestData = await getCache();
+			// Broadcast to connected clients
+			if (latestData && latestData.length > 0) {
+				broadcastPipelineComplete(latestData);
+			}
 		});
 
 		// ---------- ERROR HANDLING ----------
