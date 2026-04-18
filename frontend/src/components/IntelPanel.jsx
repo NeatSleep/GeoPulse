@@ -130,6 +130,12 @@ export default function IntelPanel({ event, isOpen, onClose }) {
                   {event.description}
                 </p>
               </div>
+              <div className="space-y-2">
+                <h3 className="text-xs uppercase tracking-widest font-mono text-[var(--text-secondary)]">Content</h3>
+                <p className="text-sm leading-relaxed text-[var(--text-secondary)] break-words whitespace-pre-wrap" data-testid="event-content">
+                  {event.content}
+                </p>
+              </div>
 
               {/* Sources */}
               {event.sources && event.sources.length > 0 && (

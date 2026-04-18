@@ -97,12 +97,17 @@ exports.queryLLMStructured = async (prompt, schema, options = {}) => {
 		const model = config.LLM.MODEL || "gpt-4";
 		const temperature = options.temperature ?? 0.2;
 
+		// Groq requires the word "json" in the prompt when using response_format
+		const enhancedPrompt = prompt.includes("json")
+			? prompt
+			: `Respond in valid JSON format. ${prompt}`;
+
 		let response;
 		if (process.env.GROQ_API_KEY) {
 			// Groq with JSON mode
 			response = await client.chat.completions.create({
 				model: model,
-				messages: [{ role: "user", content: prompt }],
+				messages: [{ role: "user", content: enhancedPrompt }],
 				temperature,
 				max_tokens: options.maxTokens || 2048,
 				response_format: { type: "json_object" },
@@ -114,7 +119,7 @@ exports.queryLLMStructured = async (prompt, schema, options = {}) => {
 			response = await client.messages.create({
 				model: model,
 				max_tokens: options.maxTokens || 2048,
-				messages: [{ role: "user", content: prompt }],
+				messages: [{ role: "user", content: enhancedPrompt }],
 				temperature,
 			});
 			const content = response.content[0]?.text || "{}";

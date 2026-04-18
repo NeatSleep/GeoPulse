@@ -103,23 +103,27 @@ DESCRIPTION: ${a.description}`;
 		})
 		.join("\n\n");
 
-	return `You are a global intelligence and major world news classifier. Your job is to identify important, impactful news articles related to:
-- Geopolitics: Armed conflicts, diplomacy, politics, humanitarian crises, terrorism
-- Major policy changes, impactful legislation, sweeping reforms, and significant government rulings
-- Major global events, natural disasters, environmental crises
-- Major economic, financial, or business shifts
+	return `You are a global intelligence and major world news classifier. Your job is to categorize important geopolitical news with SPECIFIC event types.
 
-Be HIGHLY INCLUSIVE of any major news involving the world and people. 
-CRITICAL: Do NOT over-filter! Only exclude literal consumer product reviews/gadgets, sports scores, and celebrity gossip. If it is a real news event, include it!
+Categories and SPECIFIC event types (always use one of these):
+- ARMED CONFLICT: war, attack, airstrike, battle, conflict, military, bombing, shelling, invasion, siege, insurgency, ambush, hostage, clash, rebellion
+- TERRORISM & SECURITY: assassination, espionage, cyberattack, hacking, surveillance, operation, terror
+- POLITICS: policy, legislation, reform, law, election, coup, protest, uprising, riot, crackdown, referendum, regime change, strike, government, politics
+- DIPLOMACY: diplomacy, negotiation, summit, treaty, alliance, tension, threat, crisis
+- SANCTIONS & TRADE: sanction, embargo, blockade, tariff, tradewar, armsdeal
+- HUMANITARIAN: humanitarian, refugee, displacement, famine, evacuation, disaster, pandemic, environment, mass-death
+- ECONOMIC: economy, business, trade, economic
+
+Be HIGHLY INCLUSIVE of any major news involving the world and people.
 
 Return EXACTLY ${articles.length} JSON objects in an array (same order as input).
 
 Each object:
 {
   "relevant": true/false,
-  "event_type": "string (e.g. conflict, diplomacy, election, disaster, economy, pandemic, crisis, politics, etc.)",
+  "event_type": "string (MUST be from the list above - e.g. war, attack, diplomacy, sanction, economy, etc.)",
   "country": "string (The physical country WHERE the event took place, or Global)",
-  "coordinates": "[latitude, longitude] array of numbers (The exact geographical [lat, lng] coordinates of the event's location. Extremely important for map placement! Approx city center if exact target unknown. Use null only if purely digital/global)",
+  "coordinates": "[latitude, longitude] array of numbers (The exact geographical [lat, lng] coordinates. Extremely important! Use city center if exact location unknown. Use null only if purely digital/global)",
   "severity": 1-5,
   "confidence": 0.0-1.0
 }
@@ -127,8 +131,9 @@ Each object:
 Rules:
 - Return ONLY the JSON array, no explanation
 - Do not skip any article
-- Do not reorder articles
-- If it is pure consumer tech (smartphones/gadgets), gossip, or literal sports scores → { "relevant": false }
+- Do not reorder articles  
+- CRITICAL: event_type MUST be one of the specific types listed above
+- If it is pure consumer tech, gossip, or literal sports scores → { "relevant": false }
 - Default to "relevant": true for almost any real news article. Be highly permissive.
 
 Articles:
@@ -210,6 +215,7 @@ exports.llmFilter = async (articles = []) => {
 
 					title: original.title,
 					description: original.description,
+					content: original.content || "",
 					source: original.source,
 					url: original.url,
 					timestamp: new Date(original.publishedAt).toISOString(),

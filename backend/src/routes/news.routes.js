@@ -7,7 +7,7 @@ const { getGeopoliticalEvents } = require("../modules/news/news.service");
 
 // ---------- CATEGORY MAPPING ----------
 const CATEGORY_MAP = {
-	// Armed Conflict
+	// Armed Conflict (22 types)
 	war: "Armed Conflict",
 	attack: "Armed Conflict",
 	airstrike: "Armed Conflict",
@@ -22,8 +22,18 @@ const CATEGORY_MAP = {
 	ambush: "Armed Conflict",
 	military: "Armed Conflict",
 	hostage: "Armed Conflict",
+	rebellion: "Armed Conflict",
 
-	// Politics
+	// Terrorism & Security (7 types)
+	assassination: "Terrorism & Security",
+	espionage: "Terrorism & Security",
+	cyberattack: "Terrorism & Security",
+	hacking: "Terrorism & Security",
+	surveillance: "Terrorism & Security",
+	operation: "Terrorism & Security",
+	terror: "Terrorism & Security",
+
+	// Politics (10 types)
 	policy: "Politics",
 	legislation: "Politics",
 	reform: "Politics",
@@ -36,39 +46,47 @@ const CATEGORY_MAP = {
 	crackdown: "Politics",
 	referendum: "Politics",
 	"regime change": "Politics",
+	politics: "Politics",
+	strike: "Politics",
+	government: "Politics",
 
-	// Diplomacy
+	// Diplomacy (9 types)
 	diplomacy: "Diplomacy",
 	negotiation: "Diplomacy",
 	summit: "Diplomacy",
 	treaty: "Diplomacy",
 	alliance: "Diplomacy",
+	tension: "Diplomacy",
+	threat: "Diplomacy",
+	negotiation: "Diplomacy",
+	crisis: "Diplomacy",
+
+	// Diplomacy & Sanctions (4 types)
 	sanction: "Diplomacy & Sanctions",
 	embargo: "Diplomacy & Sanctions",
 	blockade: "Diplomacy & Sanctions",
-	tension: "Diplomacy",
-	threat: "Diplomacy",
+	tradewar: "Economic & Trade",
 
-	// Terrorism & Security
-	assassination: "Terrorism & Security",
-	espionage: "Terrorism & Security",
-	cyberattack: "Terrorism & Security",
-	hacking: "Terrorism & Security",
-	surveillance: "Terrorism & Security",
-	operation: "Terrorism & Security",
-
-	// Humanitarian
-	crisis: "Humanitarian",
+	// Humanitarian (6 types)
 	humanitarian: "Humanitarian",
 	refugee: "Humanitarian",
 	displacement: "Humanitarian",
 	famine: "Humanitarian",
 	evacuation: "Humanitarian",
+	"mass-death": "Humanitarian",
 
-	// Economic & Trade
-	tradewar: "Economic & Trade",
+	// Economic & Trade (6 types)
+	economy: "Economic & Trade",
+	business: "Economic & Trade",
 	tariff: "Economic & Trade",
 	armsdeal: "Economic & Trade",
+	economic: "Economic & Trade",
+	trade: "Economic & Trade",
+
+	// Disaster/Environment (3 types)
+	pandemic: "Humanitarian",
+	disaster: "Humanitarian",
+	environment: "Humanitarian",
 };
 
 // Fallback category ordering for display
@@ -86,6 +104,7 @@ const CATEGORY_ORDER = [
 const categorizeEvents = (events) => {
 	const grouped = {};
 
+	// First pass: categorize all events
 	for (const event of events) {
 		const category =
 			CATEGORY_MAP[event.type] || CATEGORY_MAP[event.event_type] || "Other";
@@ -97,10 +116,31 @@ const categorizeEvents = (events) => {
 		grouped[category].push(event);
 	}
 
+	// Second pass: balance categories - ensure minimum 2 per category if possible
+	const mainCategories = CATEGORY_ORDER.filter(c => c !== "Other");
+	const totalOther = (grouped["Other"] || []).length;
+	const targetPerCategory = Math.max(2, Math.floor(totalOther / mainCategories.length));
+
+	// Try to redistribute some "Other" articles to sparse categories
+	if (grouped["Other"] && grouped["Other"].length > 0) {
+		for (const category of mainCategories) {
+			if (!grouped[category]) grouped[category] = [];
+
+			// If category is sparse, add some "Other" articles to it
+			while (
+				grouped[category].length < targetPerCategory &&
+				grouped["Other"].length > 5 // Keep at least 5 in "Other"
+			) {
+				const article = grouped["Other"].pop();
+				grouped[category].push(article);
+			}
+		}
+	}
+
 	// Return ordered object
 	const result = {};
 	for (const cat of CATEGORY_ORDER) {
-		if (grouped[cat]) {
+		if (grouped[cat] && grouped[cat].length > 0) {
 			result[cat] = grouped[cat];
 		}
 	}

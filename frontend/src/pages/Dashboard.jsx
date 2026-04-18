@@ -15,7 +15,7 @@ import EventGraph from '../components/EventGraph';
 import SimulationPanel from '../components/SimulationPanel';
 import FinanceCorrelation from '../components/FinanceCorrelation';
 import useWebSocket from '../hooks/useWebSocket';
-import { Map, Globe as GlobeIcon, GitBranch, Zap } from 'lucide-react';
+import { Map, Globe as GlobeIcon, GitBranch, Zap, Clock } from 'lucide-react';
 
 const GlobeView = lazy(() => import('../components/GlobeView'));
 
@@ -39,6 +39,7 @@ export default function Dashboard() {
   const [isSimulationOpen, setIsSimulationOpen] = useState(false);
   const [selectedCountryForNews, setSelectedCountryForNews] = useState(null);
   const [isLocationNewsModalOpen, setIsLocationNewsModalOpen] = useState(false);
+  const [isTimelineOpen, setIsTimelineOpen] = useState(false);
 
   // WebSocket
   const handleNewEvent = useCallback((eventData) => {
@@ -201,13 +202,8 @@ export default function Dashboard() {
       </div>
 
       {/* Bottom Left: Event Feed */}
-      <div className="fixed bottom-20 left-6 z-40 pointer-events-auto">
+      <div className="fixed bottom-24 left-6 z-40 pointer-events-auto">
         <EventFeed events={filteredEvents} onEventClick={handleEventClick} onCountryClick={handleCountryClick} />
-      </div>
-
-      {/* Bottom Center: Timeline */}
-      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-40 pointer-events-auto">
-        <TimelineSlider events={markers} onTimelineChange={setTimelineDate} activeDate={timelineDate} />
       </div>
 
       {/* Modals - Individually wrapped to only block clicks when open */}
@@ -234,6 +230,27 @@ export default function Dashboard() {
       {isSimulationOpen && (
         <div className="fixed inset-0 z-50 pointer-events-auto">
           <SimulationPanel isOpen={isSimulationOpen} onClose={() => setIsSimulationOpen(false)} />
+        </div>
+      )}
+
+      {/* Timeline Modal */}
+      {isTimelineOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end justify-center pointer-events-auto" onClick={() => setIsTimelineOpen(false)}>
+          <div className="w-full max-w-2xl bg-[var(--bg-base)] border-t border-white/10 rounded-t-2xl p-6 pb-8 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="text-center mb-4">
+              <h2 className="text-[14px] uppercase tracking-[0.15em] font-mono text-[var(--text-secondary)] mb-1">Filter by Date</h2>
+              <p className="text-[12px] font-mono text-[var(--text-muted)]">Select a date to view events from that day</p>
+            </div>
+            <TimelineSlider events={events} onTimelineChange={(date) => { setTimelineDate(date); setIsTimelineOpen(false); }} activeDate={timelineDate} />
+            <div className="text-center mt-6">
+              <button
+                onClick={() => setIsTimelineOpen(false)}
+                className="text-[10px] font-mono text-[var(--text-secondary)] hover:text-white transition-colors px-4 py-2 rounded hover:bg-white/5"
+              >
+                ✕ Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -267,6 +284,17 @@ export default function Dashboard() {
         >
           <Zap className="w-4 h-4 text-[var(--cat-economic)]" />
           <span className="text-[10px] font-mono text-[var(--text-secondary)] hidden lg:block">Simulate</span>
+        </button>
+
+        {/* Timeline Button */}
+        <button
+          onClick={() => setIsTimelineOpen(true)}
+          className="glass-panel rounded-md px-3 py-2 flex items-center gap-1.5 hover:bg-[var(--bg-elevated)] transition-colors"
+          data-testid="timeline-btn"
+          title="View Timeline"
+        >
+          <Clock className="w-4 h-4 text-[var(--cat-policy)]" />
+          <span className="text-[10px] font-mono text-[var(--text-secondary)] hidden lg:block">Timeline</span>
         </button>
 
         {/* Status Separator */}

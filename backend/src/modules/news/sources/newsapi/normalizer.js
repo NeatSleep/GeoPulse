@@ -8,6 +8,7 @@ exports.normalizeNewsAPI = (articles = []) => {
 		.map((a) => ({
 			title: a.title,
 			description: a.description,
+			content: a.content || "",
 			url: a.url,
 			source: a.source?.name || "unknown",
 			publishedAt: a.publishedAt,

@@ -4,7 +4,7 @@ const logger = require("../utils/logger.js");
 const MAIN_KEY = "geopolitics_events";
 const BACKUP_KEY = "geopolitics_events_backup";
 
-const TTL = 300; // 5 minutes
+const TTL = 600; // 10 minutes (matches cron job schedule)
 
 exports.getCache = async () => {
   try {

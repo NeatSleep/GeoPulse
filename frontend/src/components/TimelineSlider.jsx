@@ -7,17 +7,33 @@ export default function TimelineSlider({ events, onTimelineChange, activeDate })
 
   // Get unique dates from events
   const dateRange = useMemo(() => {
-    if (!events.length) return { dates: [], min: null, max: null };
+    if (!events || !Array.isArray(events) || events.length === 0) {
+      console.warn('[TimelineSlider] No events provided:', events);
+      return { dates: [], min: null, max: null };
+    }
     
     const dates = new Set();
     events.forEach(e => {
       try {
-        const d = new Date(e.published_at);
-        dates.add(d.toISOString().split('T')[0]);
-      } catch {}
+        // Try multiple date field names
+        const dateStr = e.published_at || e.date || e.timestamp || new Date().toISOString();
+        const d = new Date(dateStr);
+
+        // Check if date is valid
+        if (!isNaN(d.getTime())) {
+          dates.add(d.toISOString().split('T')[0]);
+        }
+      } catch (err) {
+        console.warn('[TimelineSlider] Error parsing date:', err);
+      }
     });
     
     const sortedDates = Array.from(dates).sort();
+    console.log('[TimelineSlider] Extracted', sortedDates.length, 'unique dates from', events.length, 'events');
+    if (sortedDates.length > 0) {
+      console.log('[TimelineSlider] Date range:', sortedDates[0], 'to', sortedDates[sortedDates.length - 1]);
+    }
+
     return {
       dates: sortedDates,
       min: sortedDates[0],
@@ -51,13 +67,21 @@ export default function TimelineSlider({ events, onTimelineChange, activeDate })
 
   const currentIdx = activeDate ? dateRange.dates.indexOf(activeDate) : dateRange.dates.length - 1;
 
-  if (dateRange.dates.length < 2) return null;
+  if (dateRange.dates.length === 0) {
+    return (
+      <div className="w-full max-w-[600px] mx-auto px-6 py-4">
+        <p className="text-[12px] font-mono text-[var(--text-secondary)] text-center">
+          No events available to display timeline
+        </p>
+      </div>
+    );
+  }
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 glass-panel rounded-xl px-6 py-4 w-[480px]"
+      className="w-full px-6 py-6"
       data-testid="timeline-slider"
     >
       <div className="flex items-center justify-between mb-3">
@@ -84,21 +108,36 @@ export default function TimelineSlider({ events, onTimelineChange, activeDate })
         </div>
       </div>
       
-      {/* Slider */}
-      <div className="relative">
-        <input
-          type="range"
-          min={0}
-          max={dateRange.dates.length - 1}
-          value={currentIdx >= 0 ? currentIdx : dateRange.dates.length - 1}
-          onChange={handleSliderChange}
-          className="timeline-range w-full"
-          data-testid="timeline-range-input"
-        />
-        <div className="flex justify-between mt-1">
-          <span className="text-[10px] font-mono text-[var(--text-muted)]">{formatDate(dateRange.min)}</span>
-          <span className="text-[10px] font-mono text-[var(--text-muted)]">{formatDate(dateRange.max)}</span>
-        </div>
+      {/* Slider or Message */}
+      <div className="relative py-4">
+        {dateRange.dates.length === 1 ? (
+          <div className="text-center py-6 px-4 rounded-lg bg-white/5 border border-white/10">
+            <p className="text-[12px] font-mono text-[var(--text-muted)] mb-2">All events are from:</p>
+            <p className="text-[14px] font-mono font-bold text-white mb-3">{formatDate(dateRange.dates[0])}</p>
+            <p className="text-[10px] font-mono text-[var(--text-secondary)]">
+              ({dateRange.dates.length === 1 ? dateRange.dates.length + ' unique date available' : dateRange.dates.length + ' unique dates available'})
+            </p>
+          </div>
+        ) : (
+          <>
+            <input
+              type="range"
+              min={0}
+              max={dateRange.dates.length - 1}
+              value={currentIdx >= 0 ? currentIdx : dateRange.dates.length - 1}
+              onChange={handleSliderChange}
+                className="timeline-range w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[var(--cat-policy)]"
+                data-testid="timeline-range-input"
+                style={{
+                  background: `linear-gradient(to right, var(--cat-policy) 0%, var(--cat-policy) ${dateRange.dates.length > 1 ? (currentIdx / (dateRange.dates.length - 1)) * 100 : 100}%, rgba(255,255,255,0.1) ${dateRange.dates.length > 1 ? (currentIdx / (dateRange.dates.length - 1)) * 100 : 100}%, rgba(255,255,255,0.1) 100%)`
+                }}
+              />
+              <div className="flex justify-between mt-3">
+                <span className="text-[10px] font-mono text-[var(--text-muted)]">{formatDate(dateRange.min)}</span>
+                <span className="text-[10px] font-mono text-[var(--text-muted)]">{formatDate(dateRange.max)}</span>
+              </div>
+          </>
+        )}
       </div>
     </motion.div>
   );

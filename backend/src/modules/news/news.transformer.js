@@ -60,6 +60,7 @@ exports.transformEvents = (events = []) => {
 
 				title: e.title,
 				description: e.description,
+				content: e.content || "",
 
 				sources: [
 					{
