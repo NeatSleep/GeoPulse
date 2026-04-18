@@ -1,10 +1,22 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink, MapPin, Calendar, Shield, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react';
 import { CATEGORY_COLORS } from '../services/api';
 import { getAuthenticityLabel, getAuthenticityBadgeColor } from '../services/search';
+import TranslateButton from './TranslateButton';
 
 export default function IntelPanel({ event, isOpen, onClose, searchResults }) {
+  // ── Translation state (declared above any early returns) ──
+  const [translatedFields, setTranslatedFields] = useState(null);
+
+  const handleTranslated = useCallback((translated) => {
+    setTranslatedFields(translated);
+  }, []);
+
+  const handleShowOriginal = useCallback(() => {
+    setTranslatedFields(null);
+  }, []);
+
   // Handle search results display
   if (searchResults && searchResults.success && searchResults.results && searchResults.results.length > 0) {
     return (
@@ -185,7 +197,7 @@ export default function IntelPanel({ event, isOpen, onClose, searchResults }) {
                     </span>
                   </div>
                   <h2 className="text-2xl font-bold tracking-tight" data-testid="event-title">
-                    {event.title}
+                    {translatedFields?.title || event.title}
                   </h2>
                 </div>
                 <button
@@ -251,8 +263,17 @@ export default function IntelPanel({ event, isOpen, onClose, searchResults }) {
               <div className="space-y-2">
                 <h3 className="text-xs uppercase tracking-widest font-mono text-[var(--text-secondary)]">Description</h3>
                 <p className="text-sm leading-relaxed text-[var(--text-secondary)] break-words whitespace-pre-wrap" data-testid="event-description">
-                  {event.description}
+                  {translatedFields?.description || event.description}
                 </p>
+              </div>
+
+              {/* Translate Button */}
+              <div className="pt-1">
+                <TranslateButton
+                  texts={{ title: event.title, description: event.description }}
+                  onTranslated={handleTranslated}
+                  onShowOriginal={handleShowOriginal}
+                />
               </div>
 
               {/* Sources */}

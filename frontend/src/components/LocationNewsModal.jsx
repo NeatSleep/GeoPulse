@@ -1,9 +1,25 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MapPin, AlertCircle, ExternalLink } from 'lucide-react';
 import { CATEGORY_COLORS } from '../services/api';
+import TranslateButton from './TranslateButton';
 
 export default function LocationNewsModal({ isOpen, onClose, country, events }) {
+  // Per-event translated fields: { [eventId]: { title?, description? } }
+  const [translatedMap, setTranslatedMap] = useState({});
+
+  const handleTranslated = useCallback((eventId, translated) => {
+    setTranslatedMap((prev) => ({ ...prev, [eventId]: translated }));
+  }, []);
+
+  const handleShowOriginal = useCallback((eventId) => {
+    setTranslatedMap((prev) => {
+      const next = { ...prev };
+      delete next[eventId];
+      return next;
+    });
+  }, []);
+
   if (!country) return null;
 
   const countryEvents = events.filter(e => e.country === country);
@@ -100,15 +116,25 @@ export default function LocationNewsModal({ isOpen, onClose, country, events }) 
 
                         {/* Title */}
                         <h3 className="font-semibold text-white mb-2 group-hover:text-blue-300 transition-colors line-clamp-2">
-                          {event.title}
+                          {translatedMap[event.id]?.title || event.title}
                         </h3>
 
                         {/* Description */}
                         {event.description && (
                           <p className="text-sm text-gray-300 mb-3 line-clamp-2">
-                            {event.description}
+                            {translatedMap[event.id]?.description || event.description}
                           </p>
                         )}
+
+                        {/* Translate Button */}
+                        <div className="mb-3">
+                          <TranslateButton
+                            compact
+                            texts={{ title: event.title, description: event.description }}
+                            onTranslated={(t) => handleTranslated(event.id, t)}
+                            onShowOriginal={() => handleShowOriginal(event.id)}
+                          />
+                        </div>
 
                         {/* Meta */}
                         <div className="flex items-center justify-between text-xs text-gray-400 mb-3">

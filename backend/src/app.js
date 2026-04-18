@@ -8,6 +8,7 @@ const logger = require("./utils/logger");
 // Routes
 const newsRoutes = require("./routes/news.routes");
 const searchRoutes = require("./routes/search.routes");
+const translateRoutes = require("./routes/translate.routes");
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.get("/api/health", (req, res) => {
 // Main API
 app.use("/api", newsRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api", translateRoutes);
 
 // Root route
 app.get("/", (req, res) => {
